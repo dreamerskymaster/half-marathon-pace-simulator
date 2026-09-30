@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Half Marathon Pace Simulator | Fictional Training Visualizer</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              cyan: '#06b6d4',
+              cyanHover: '#0891b2',
+              sky: '#0ea5e9',
+              slateBg: '#0b1120',
+              cardBg: '#111827',
+              cardBorder: '#1f2937',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #0b1120;
+      color: #f1f5f9;
+      font-family: 'Inter', sans-serif;
+      accent-color: #06b6d4;
+    }
+
+    /* Range slider custom styling for modern athletic feel */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 9999px;
+      outline: none;
+      transition: background 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #06b6d4;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.65), 0 0 2px #fff;
+      border: 2px solid #ffffff;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.9), 0 0 4px #fff;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #06b6d4;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.65), 0 0 2px #fff;
+      border: 2px solid #ffffff;
+    }
+
+    /* Glow utility */
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.15);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-cyan-500 selection:text-slate-950">
+
+  <!-- Main Container -->
+  <div class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12 flex-1">
+    
+    <!-- Top Header -->
+    <header class="mb-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-400 text-xs font-semibold tracking-wide uppercase mb-3">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            Interactive Training Simulator • 13.1 Miles
+          </div>
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+            Half Marathon <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-500">Pace Simulator</span>
+          </h1>
+          <p class="text-slate-400 text-sm sm:text-base mt-2 max-w-2xl">
+            Model aerobic adaptation feasibility from baseline long-run pace to race day goal. Real-time progression calculation based on weekly volume and physiological thresholds.
+          </p>
+        </div>
+        
+        <!-- Quick Preset Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs uppercase text-slate-500 font-medium tracking-wider mr-1">Presets:</span>
+          <button id="preset-default" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            Target 2:10 (14 Wks)
+          </button>
+          <button id="preset-safe" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            Conservative (18 Wks)
+          </button>
+          <button id="preset-aggressive" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            Sub-2:00 Push (8 Wks)
+          </button>
+        </div>
+      </div>
+
+      <!-- High-Level Summary Cards Grid -->
+      <section aria-label="Key Performance Indicators" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        
+        <!-- Card 1: Target Race Pace -->
+        <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800 glow-cyan flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Target Race Pace</span>
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span id="card-target-pace" class="text-3xl font-extrabold text-white tracking-tight">09:55</span>
+              <span class="text-slate-400 text-sm font-medium">/mile</span>
+            </div>
+            <p id="card-target-detail" class="text-xs text-slate-400 mt-1">2h 10m finish • 13.1 miles</p>
+          </div>
+        </div>
+
+        <!-- Card 2: Current Baseline Pace -->
+        <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Current Baseline</span>
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span id="card-base-pace" class="text-3xl font-extrabold text-slate-200 tracking-tight">11:15</span>
+              <span class="text-slate-400 text-sm font-medium">/mile</span>
+            </div>
+            <p id="card-total-drop" class="text-xs text-slate-400 mt-1">Total drop: -1:20 /mile (80s)</p>
+          </div>
+        </div>
+
+        <!-- Card 3: Weekly Pace Improvement Rate -->
+        <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Weekly Improvement</span>
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12" />
+            </svg>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span id="card-weekly-rate" class="text-3xl font-extrabold text-cyan-400 tracking-tight">5.7</span>
+              <span class="text-slate-400 text-sm font-medium">sec / week</span>
+            </div>
+            <p id="card-monthly-rate" class="text-xs text-slate-400 mt-1">~22.7 sec / month average</p>
+          </div>
+        </div>
+
+        <!-- Card 4: Feasibility / Risk Indicator -->
+        <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider">
+            <span>Injury Risk Assessment</span>
+            <span id="risk-pill-icon" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+          </div>
+          <div class="mt-3">
+            <div id="risk-badge-container">
+              <span id="card-risk-title" class="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Aggressive - Monitor for Injury
+              </span>
+            </div>
+            <p id="card-risk-desc" class="text-xs text-slate-400 mt-1.5">
+              Demanding progression rate. Strict recovery required.
+            </p>
+          </div>
+        </div>
+
+      </section>
+    </header>
+
+    <!-- Main Dashboard Body: Controls (Left) & Chart (Right) -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left Column: Controls (4 cols on lg) -->
+      <section aria-labelledby="controls-heading" class="lg:col-span-5 space-y-6">
+        
+        <!-- Controls Card -->
+        <div class="bg-slate-900/95 border border-slate-800 rounded-2xl p-6 glow-cyan">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+            <h2 id="controls-heading" class="text-lg font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              Training Parameters
+            </h2>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">Real-time</span>
+          </div>
+
+          <div class="space-y-6">
+            
+            <!-- Slider 1: Weeks Until Race -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="input-weeks" class="text-sm font-medium text-slate-300">
+                  Weeks Until Race
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <span id="display-weeks" class="text-base font-bold text-cyan-400">14</span>
+                  <span class="text-xs text-slate-400 font-normal">weeks</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                id="input-weeks" 
+                min="5" 
+                max="20" 
+                step="1" 
+                value="14"
+                aria-label="Weeks Until Race"
+                aria-valuemin="5"
+                aria-valuemax="20"
+                aria-valuenow="14"
+              >
+              <div class="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                <span>5 wks (Urgent)</span>
+                <span>14 wks (Standard)</span>
+                <span>20 wks (Base build)</span>
+              </div>
+            </div>
+
+            <!-- Slider 2: Target Finish Time -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="input-target-time" class="text-sm font-medium text-slate-300">
+                  Target Finish Time
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <span id="display-target-time" class="text-base font-bold text-cyan-400">130</span>
+                  <span class="text-xs text-slate-400 font-normal">min</span>
+                  <span id="display-target-time-hhmm" class="text-xs font-semibold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 ml-1">2:10:00</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                id="input-target-time" 
+                min="110" 
+                max="160" 
+                step="1" 
+                value="130"
+                aria-label="Target Finish Time in Minutes"
+                aria-valuemin="110"
+                aria-valuemax="160"
+                aria-valuenow="130"
+              >
+              <div class="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                <span>110m (1:50)</span>
+                <span>130m (2:10)</span>
+                <span>160m (2:40)</span>
+              </div>
+            </div>
+
+            <!-- Slider 3: Current Base Pace -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label for="input-base-pace" class="text-sm font-medium text-slate-300">
+                  Current Base Pace
+                </label>
+                <div class="flex items-center gap-1.5">
+                  <span id="display-base-pace-mmss" class="text-base font-bold text-cyan-400">11:15</span>
+                  <span class="text-xs text-slate-400 font-normal">/mile</span>
+                  <span id="display-base-pace-sec" class="text-xs text-slate-400 font-mono">(675s)</span>
+                </div>
+              </div>
+              <input 
+                type="range" 
+                id="input-base-pace" 
+                min="540" 
+                max="750" 
+                step="1" 
+                value="675"
+                aria-label="Current Base Pace in seconds per mile"
+                aria-valuemin="540"
+                aria-valuemax="750"
+                aria-valuenow="675"
+              >
+              <div class="flex justify-between text-[11px] text-slate-400 mt-1 font-mono">
+                <span>9:00 (540s)</span>
+                <span>11:15 (675s)</span>
+                <span>12:30 (750s)</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Scenario Context & Physiological Rules Card -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Physiological Progression Rules
+          </h3>
+          <div class="space-y-2.5 text-xs text-slate-400">
+            <div class="flex items-start gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 mt-1 flex-shrink-0"></span>
+              <div>
+                <strong class="text-emerald-300">≤ 5.0 sec/wk (Safe Progression):</strong> 
+                Aerobic threshold adaptation comfortably sustained across 3 runs/week without overloading tendons.
+              </div>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-400 mt-1 flex-shrink-0"></span>
+              <div>
+                <strong class="text-amber-300">5.1 – 8.0 sec/wk (Aggressive):</strong> 
+                Stretches neuromuscular adaptation limits. Requires disciplined sleep, nutrition, and foam rolling.
+              </div>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-400 mt-1 flex-shrink-0"></span>
+              <div>
+                <strong class="text-rose-300">&gt; 8.0 sec/wk (High Injury Risk):</strong> 
+                Exceeds mitochondrial and collagen remodeling capacity. Recommendation: extend timeline by 4–8 weeks.
+              </div>
+            </div>
+          </div>
+          <div class="border-t border-slate-800/80 pt-3 text-[11px] text-slate-400 flex items-center justify-between">
+            <span>Fictional Profile: 3 Runs / Week</span>
+            <span>Distance: 13.109 Miles</span>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Interactive Line Chart (7 cols on lg) -->
+      <section aria-labelledby="chart-heading" class="lg:col-span-7 bg-slate-900/95 border border-slate-800 rounded-2xl p-6 glow-cyan">
+        
+        <!-- Chart Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4 mb-4">
+          <div>
+            <h2 id="chart-heading" class="text-lg font-bold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+              Weekly Required Pace Trajectory
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Target pace milestone for long runs by training week</p>
+          </div>
+          
+          <!-- Legend Pill -->
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950 text-cyan-300 border border-cyan-800">
+              <span class="w-2.5 h-0.5 bg-cyan-400 rounded-full"></span>
+              Required Pace Trajectory
+            </span>
+          </div>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="relative w-full h-[360px] sm:h-[420px] lg:h-[460px]">
+          <canvas id="paceChart" aria-label="Half Marathon Pace Trajectory Chart" role="img"></canvas>
+        </div>
+
+        <!-- Chart Milestone Breakdown Footer -->
+        <div class="mt-4 pt-4 border-t border-slate-800 grid grid-cols-3 gap-2 text-center">
+          <div class="bg-slate-950/60 rounded-lg p-2.5 border border-slate-800/80">
+            <span class="text-[11px] text-slate-400 block uppercase font-medium">Starting Point</span>
+            <span id="chart-start-pace" class="text-sm font-bold text-white font-mono">11:15 /mi</span>
+          </div>
+          <div class="bg-slate-950/60 rounded-lg p-2.5 border border-slate-800/80">
+            <span class="text-[11px] text-slate-400 block uppercase font-medium">Midpoint (W7)</span>
+            <span id="chart-mid-pace" class="text-sm font-bold text-cyan-400 font-mono">10:35 /mi</span>
+          </div>
+          <div class="bg-slate-950/60 rounded-lg p-2.5 border border-slate-800/80">
+            <span class="text-[11px] text-slate-400 block uppercase font-medium">Race Goal Pace</span>
+            <span id="chart-end-pace" class="text-sm font-bold text-sky-400 font-mono">09:55 /mi</span>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer with Exact Required Submission Footnote -->
+  <footer class="w-full border-t border-slate-800/80 bg-slate-950 py-6 px-4 sm:px-6">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+      <div class="text-xs text-slate-400 font-mono">
+        Fictional Half Marathon Training Visualizer • Zero-Build Vanilla Architecture
+      </div>
+      <div class="text-xs text-slate-400 italic">
+        *Footnote: The data utilized in this visualization has been entirely fictionalized for portfolio and demonstration purposes.*
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Half marathon constant distance in US miles
+      const HALF_MARATHON_MILES = 13.1094;
+
+      // DOM Elements
+      const inputWeeks = document.getElementById('input-weeks');
+      const inputTargetTime = document.getElementById('input-target-time');
+      const inputBasePace = document.getElementById('input-base-pace');
+
+      const displayWeeks = document.getElementById('display-weeks');
+      const displayTargetTime = document.getElementById('display-target-time');
+      const displayTargetTimeHHMM = document.getElementById('display-target-time-hhmm');
+      const displayBasePaceMMSS = document.getElementById('display-base-pace-mmss');
+      const displayBasePaceSec = document.getElementById('display-base-pace-sec');
+
+      const cardTargetPace = document.getElementById('card-target-pace');
+      const cardTargetDetail = document.getElementById('card-target-detail');
+      const cardBasePace = document.getElementById('card-base-pace');
+      const cardTotalDrop = document.getElementById('card-total-drop');
+      const cardWeeklyRate = document.getElementById('card-weekly-rate');
+      const cardMonthlyRate = document.getElementById('card-monthly-rate');
+      
+      const cardRiskTitle = document.getElementById('card-risk-title');
+      const cardRiskDesc = document.getElementById('card-risk-desc');
+      const riskPillIcon = document.getElementById('risk-pill-icon');
+
+      const chartStartPace = document.getElementById('chart-start-pace');
+      const chartMidPace = document.getElementById('chart-mid-pace');
+      const chartEndPace = document.getElementById('chart-end-pace');
+
+      const presetDefault = document.getElementById('preset-default');
+      const presetSafe = document.getElementById('preset-safe');
+      const presetAggressive = document.getElementById('preset-aggressive');
+
+      let chartInstance = null;
+
+      /**
+       * Convert total seconds to MM:SS string
+       * @param {number} totalSeconds
+       * @returns {string}
+       */
+      function formatSecondsToMMSS(totalSeconds) {
+        if (isNaN(totalSeconds) || totalSeconds === null) return '00:00';
+        const rounded = Math.round(totalSeconds);
+        const minutes = Math.floor(rounded / 60);
+        const seconds = rounded % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      /**
+       * Convert total minutes to H:MM:SS or H:MM format
+       * @param {number} totalMinutes
+       * @returns {string}
+       */
+      function formatMinutesToHHMM(totalMinutes) {
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = Math.floor(totalMinutes % 60);
+        return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
+      }
+
+      /**
+       * Calculate all training metrics from slider inputs
+       */
+      function calculateSimulation(weeks, targetMinutes, basePaceSeconds) {
+        // Target pace in seconds per mile: (Minutes * 60) / 13.1094 miles
+        const targetPaceSeconds = (targetMinutes * 60) / HALF_MARATHON_MILES;
+        
+        // Total pace delta (positive means improvement is required)
+        const totalDeltaSeconds = basePaceSeconds - targetPaceSeconds;
+
+        // Weekly required improvement rate (seconds / week)
+        const weeklyImprovement = totalDeltaSeconds / weeks;
+
+        // Risk categorization
+        let riskCategory = 'safe';
+        let riskTitle = 'Safe Progression';
+        let riskDesc = 'Sustainable physiological adaptation. Minimal overuse injury risk.';
+        let riskColor = 'emerald';
+
+        if (weeklyImprovement <= 5.0) {
+          riskCategory = 'safe';
+          riskTitle = 'Safe Progression';
+          riskDesc = 'Sustainable aerobic adaptation. Safe progression for 3 runs/week.';
+          riskColor = 'emerald';
+        } else if (weeklyImprovement <= 8.0) {
+          riskCategory = 'aggressive';
+          riskTitle = 'Aggressive - Monitor for Injury';
+          riskDesc = 'Demanding weekly progression. Prioritize sleep, recovery, and mileage spacing.';
+          riskColor = 'amber';
+        } else {
+          riskCategory = 'high';
+          riskTitle = 'High Injury Risk - Extend Timeline';
+          riskDesc = 'Weekly progression exceeds safe limits (>8s/wk). High risk of shin splints & tendinitis.';
+          riskColor = 'rose';
+        }
+
+        // Generate data trajectory across weeks
+        const labels = [];
+        const trajectoryData = [];
+
+        for (let i = 1; i <= weeks; i++) {
+          labels.push(`Week ${i}`);
+          // Linear interpolation from Base Pace at Week 1 down to Target Pace at Week N
+          const paceAtWeek = basePaceSeconds - ((i - 1) / (weeks - 1)) * totalDeltaSeconds;
+          trajectoryData.push(Math.round(paceAtWeek * 10) / 10);
+        }
+
+        return {
+          weeks,
+          targetMinutes,
+          basePaceSeconds,
+          targetPaceSeconds,
+          totalDeltaSeconds,
+          weeklyImprovement,
+          riskCategory,
+          riskTitle,
+          riskDesc,
+          riskColor,
+          labels,
+          trajectoryData
+        };
+      }
+
+      /**
+       * Update DOM elements with calculated metrics
+       */
+      function updateDOM(metrics) {
+        // Sliders value displays
+        displayWeeks.textContent = metrics.weeks;
+        inputWeeks.setAttribute('aria-valuenow', metrics.weeks);
+
+        displayTargetTime.textContent = metrics.targetMinutes;
+        displayTargetTimeHHMM.textContent = formatMinutesToHHMM(metrics.targetMinutes);
+        inputTargetTime.setAttribute('aria-valuenow', metrics.targetMinutes);
+
+        displayBasePaceMMSS.textContent = formatSecondsToMMSS(metrics.basePaceSeconds);
+        displayBasePaceSec.textContent = `(${metrics.basePaceSeconds}s)`;
+        inputBasePace.setAttribute('aria-valuenow', metrics.basePaceSeconds);
+
+        // Header KPI Cards
+        cardTargetPace.textContent = formatSecondsToMMSS(metrics.targetPaceSeconds);
+        cardTargetDetail.textContent = `${formatMinutesToHHMM(metrics.targetMinutes)} finish • 13.1 miles`;
+
+        cardBasePace.textContent = formatSecondsToMMSS(metrics.basePaceSeconds);
+        const dropSign = metrics.totalDeltaSeconds >= 0 ? '-' : '+';
+        cardTotalDrop.textContent = `Total drop: ${dropSign}${formatSecondsToMMSS(Math.abs(metrics.totalDeltaSeconds))} /mile (${Math.round(metrics.totalDeltaSeconds)}s)`;
+
+        cardWeeklyRate.textContent = metrics.weeklyImprovement.toFixed(1);
+        cardMonthlyRate.textContent = `~${(metrics.weeklyImprovement * 4.33).toFixed(1)} sec / month average`;
+
+        // Risk Badge & Descriptions
+        cardRiskTitle.textContent = metrics.riskTitle;
+        cardRiskDesc.textContent = metrics.riskDesc;
+
+        // Reset badge classes
+        cardRiskTitle.className = 'inline-block px-2.5 py-1 text-xs font-bold rounded-md border';
+        if (metrics.riskColor === 'emerald') {
+          cardRiskTitle.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+          riskPillIcon.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+        } else if (metrics.riskColor === 'amber') {
+          cardRiskTitle.classList.add('bg-amber-500/20', 'text-amber-300', 'border-amber-500/30');
+          riskPillIcon.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+        } else {
+          cardRiskTitle.classList.add('bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+          riskPillIcon.className = 'w-2.5 h-2.5 rounded-full bg-rose-400';
+        }
+
+        // Chart sub-panel breakdown
+        chartStartPace.textContent = `${formatSecondsToMMSS(metrics.basePaceSeconds)} /mi`;
+        
+        const midIndex = Math.floor(metrics.weeks / 2);
+        const midPaceValue = metrics.trajectoryData[midIndex] || metrics.basePaceSeconds;
+        chartMidPace.textContent = `${formatSecondsToMMSS(midPaceValue)} /mi`;
+        const midLabel = document.querySelector('#chart-mid-pace').previousElementSibling;
+        if (midLabel) midLabel.textContent = `Midpoint (W${midIndex + 1})`;
+
+        chartEndPace.textContent = `${formatSecondsToMMSS(metrics.targetPaceSeconds)} /mi`;
+      }
+
+      /**
+       * Initialize Chart.js instance with customized dark theme
+       */
+      function initChart(initialMetrics) {
+        const ctx = document.getElementById('paceChart').getContext('2d');
+
+        // Create sleek gradient fill under line
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.35)');
+        gradient.addColorStop(0.8, 'rgba(6, 182, 212, 0.03)');
+        gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
+
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: initialMetrics.labels,
+            datasets: [{
+              label: 'Required Pace Trajectory',
+              data: initialMetrics.trajectoryData,
+              borderColor: '#06b6d4',
+              borderWidth: 3,
+              backgroundColor: gradient,
+              fill: true,
+              tension: 0, // Straight line progression as required
+              pointBackgroundColor: '#06b6d4',
+              pointBorderColor: '#ffffff',
+              pointBorderWidth: 2,
+              pointRadius: 5,
+              pointHoverRadius: 8,
+              pointHoverBackgroundColor: '#22d3ee',
+              pointHoverBorderColor: '#0b1120',
+              pointHoverBorderWidth: 3,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              intersect: false,
+              mode: 'index',
+            },
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                backgroundColor: '#0f172a',
+                titleColor: '#f8fafc',
+                bodyColor: '#38bdf8',
+                borderColor: '#1e293b',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 8,
+                titleFont: {
+                  family: 'Inter',
+                  size: 13,
+                  weight: '600',
+                },
+                bodyFont: {
+                  family: 'Inter',
+                  size: 12,
+                  weight: '500',
+                },
+                callbacks: {
+                  label: function (context) {
+                    const seconds = context.parsed.y;
+                    const formatted = formatSecondsToMMSS(seconds);
+                    return ` Required Pace: ${formatted} /mile (${seconds.toFixed(1)}s)`;
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  color: 'rgba(30, 41, 59, 0.6)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  color: '#94a3b8',
+                  font: {
+                    family: 'Inter',
+                    size: 11,
+                  },
+                  maxRotation: 45,
+                  minRotation: 0,
+                }
+              },
+              y: {
+                grid: {
+                  color: 'rgba(30, 41, 59, 0.6)',
+                  drawBorder: false,
+                },
+                ticks: {
+                  color: '#94a3b8',
+                  font: {
+                    family: 'Inter',
+                    size: 11,
+                  },
+                  // Format seconds back into MM:SS format
+                  callback: function (val) {
+                    return formatSecondsToMMSS(val);
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      /**
+       * Update chart data and redraw
+       */
+      function updateChart(metrics) {
+        if (!chartInstance) return;
+
+        chartInstance.data.labels = metrics.labels;
+        chartInstance.data.datasets[0].data = metrics.trajectoryData;
+        
+        // Dynamically adjust Y scale bounds for aesthetic visual headroom
+        const minPace = Math.min(...metrics.trajectoryData);
+        const maxPace = Math.max(...metrics.trajectoryData);
+        const padding = Math.max(15, (maxPace - minPace) * 0.15);
+
+        chartInstance.options.scales.y.suggestedMin = Math.floor(minPace - padding);
+        chartInstance.options.scales.y.suggestedMax = Math.ceil(maxPace + padding);
+
+        chartInstance.update();
+      }
+
+      /**
+       * Main update loop triggered on any input change
+       */
+      function handleInputChange() {
+        const weeks = parseInt(inputWeeks.value, 10);
+        const targetMinutes = parseInt(inputTargetTime.value, 10);
+        const basePaceSeconds = parseInt(inputBasePace.value, 10);
+
+        const metrics = calculateSimulation(weeks, targetMinutes, basePaceSeconds);
+        updateDOM(metrics);
+        updateChart(metrics);
+      }
+
+      // Event Listeners for real-time slider updates
+      inputWeeks.addEventListener('input', handleInputChange);
+      inputTargetTime.addEventListener('input', handleInputChange);
+      inputBasePace.addEventListener('input', handleInputChange);
+
+      // Preset button handlers
+      presetDefault.addEventListener('click', function () {
+        inputWeeks.value = 14;
+        inputTargetTime.value = 130;
+        inputBasePace.value = 675;
+        handleInputChange();
+      });
+
+      presetSafe.addEventListener('click', function () {
+        inputWeeks.value = 18;
+        inputTargetTime.value = 135;
+        inputBasePace.value = 675;
+        handleInputChange();
+      });
+
+      presetAggressive.addEventListener('click', function () {
+        inputWeeks.value = 8;
+        inputTargetTime.value = 120;
+        inputBasePace.value = 675;
+        handleInputChange();
+      });
+
+      // Initial execution
+      const initialMetrics = calculateSimulation(
+        parseInt(inputWeeks.value, 10),
+        parseInt(inputTargetTime.value, 10),
+        parseInt(inputBasePace.value, 10)
+      );
+
+      updateDOM(initialMetrics);
+      initChart(initialMetrics);
+      updateChart(initialMetrics);
+
+    })();
+  </script>
+</body>
+</html>
