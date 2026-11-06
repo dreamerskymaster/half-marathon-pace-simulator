@@ -1,10 +1,13 @@
 # Half Marathon Pace Simulator
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-06b6d4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://dreamerskymaster.github.io/half-marathon-pace-simulator/)
+[![Launch Video](https://img.shields.io/badge/Launch%20Video-MP4-ff0055?style=for-the-badge&logo=youtube&logoColor=white)](brag-output/brag.mp4)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Architecture: Zero--Build](https://img.shields.io/badge/Architecture-Zero--Build-10b981?style=for-the-badge)](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/First_steps/What_is_JavaScript)
 
-An interactive, responsive single-file training visualizer that models the mathematical and physiological feasibility of half marathon pacing goals. Built with **Vanilla JavaScript**, **Tailwind CSS (via CDN)**, and **Chart.js (via CDN)** with zero build tooling or Node.js runtime required.
+An interactive, single-file physiological training visualizer that models weekly pace progression against safe tendon and aerobic adaptation thresholds. Built with Vanilla JS, Tailwind CSS, and Chart.js with zero build tooling or Node.js runtime required.
+
+![Half Marathon Pace Simulator Demo](docs/demo.gif)
 
 ---
 

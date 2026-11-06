@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Half Marathon Pace Simulator Launch</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ground: #0b1120;
+        --surface: #111827;
+        --border: #1f2937;
+        --cyan: #06b6d4;
+        --cyan-glow: rgba(6, 182, 212, 0.25);
+        --sky: #0ea5e9;
+        --amber: #f59e0b;
+        --emerald: #10b981;
+        --rose: #f43f5e;
+        --ink: #f8fafc;
+        --muted: #94a3b8;
+        --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html, body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+        font-family: var(--font-sans);
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 25%, #132238 0%, #0b1120 75%);
+      }
+
+      .grid-backdrop {
+        position: absolute;
+        inset: 0;
+        background-size: 64px 64px;
+        background-image: 
+          linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
+      }
+
+      .glow-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(140px);
+        pointer-events: none;
+      }
+
+      .glow-1 {
+        width: 600px;
+        height: 600px;
+        background: var(--cyan-glow);
+        top: -100px;
+        left: -100px;
+      }
+
+      .glow-2 {
+        width: 500px;
+        height: 500px;
+        background: rgba(14, 165, 233, 0.2);
+        bottom: -50px;
+        right: -50px;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 60px 100px;
+        opacity: 0;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 28px;
+        border-radius: 9999px;
+        background: rgba(6, 182, 212, 0.12);
+        border: 1px solid rgba(6, 182, 212, 0.35);
+        color: var(--cyan);
+        font-family: var(--font-mono);
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 28px;
+        box-shadow: 0 0 25px rgba(6, 182, 212, 0.2);
+      }
+
+      .hero-title {
+        font-size: 82px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+        text-align: center;
+        margin-bottom: 24px;
+        background: linear-gradient(135deg, #ffffff 40%, #06b6d4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .hero-subtitle {
+        font-size: 30px;
+        color: var(--muted);
+        text-align: center;
+        max-width: 1050px;
+        line-height: 1.45;
+      }
+
+      .dashboard-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+      }
+
+      .kpi-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+        width: 100%;
+        max-width: 1500px;
+        margin-top: 36px;
+      }
+
+      .kpi-box {
+        background: rgba(17, 24, 39, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .kpi-label {
+        font-size: 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+      }
+
+      .kpi-val {
+        font-size: 42px;
+        font-weight: 800;
+        font-family: var(--font-mono);
+        color: #ffffff;
+      }
+
+      .kpi-val.cyan { color: var(--cyan); }
+      .kpi-val.emerald { color: var(--emerald); }
+      .kpi-val.amber { color: var(--amber); }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 1400px;
+        height: 480px;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 24px;
+        padding: 40px 50px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+
+      .chart-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #ffffff;
+      }
+
+      .risk-badge {
+        padding: 8px 20px;
+        border-radius: 9999px;
+        font-family: var(--font-mono);
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .risk-safe {
+        background: rgba(16, 185, 129, 0.15);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: var(--emerald);
+      }
+
+      .risk-warning {
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        color: var(--amber);
+      }
+
+      .svg-chart {
+        width: 100%;
+        height: 320px;
+      }
+
+      .url-bar {
+        margin-top: 40px;
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 16px 36px;
+        border-radius: 9999px;
+        font-family: var(--font-mono);
+        font-size: 24px;
+        color: #38bdf8;
+      }
+    </style>
+  </head>
+  <body>
+    <audio id="bgm" data-start="0" data-duration="18.0" data-track-index="0" data-volume="0.85" src="assets/music/bgm.mp3"></audio>
+    <audio id="sfx-chime" data-start="0.4" data-duration="0.62" data-track-index="1" data-volume="0.6" src="assets/sfx/chime.ogg"></audio>
+    <audio id="sfx-click-1" data-start="4.8" data-duration="0.13" data-track-index="1" data-volume="0.6" src="assets/sfx/click.ogg"></audio>
+    <audio id="sfx-click-2" data-start="9.8" data-duration="0.13" data-track-index="1" data-volume="0.6" src="assets/sfx/click.ogg"></audio>
+    <audio id="sfx-chime-end" data-start="14.2" data-duration="0.62" data-track-index="1" data-volume="0.6" src="assets/sfx/chime.ogg"></audio>
+
+    <div id="root" data-composition-id="root" data-width="1920" data-height="1080">
+      <div class="grid-backdrop"></div>
+      <div class="glow-orb glow-1"></div>
+      <div class="glow-orb glow-2"></div>
+
+      <!-- Scene 1: Hook -->
+      <div id="scene-1" class="scene">
+        <div class="pill">🏃 Physiological Training Visualizer</div>
+        <h1 class="hero-title">Half Marathon<br/>Pace Simulator</h1>
+        <p class="hero-subtitle">Mathematical modeling of weekly pace progression and musculoskeletal adaptation thresholds. Know before you race.</p>
+      </div>
+
+      <!-- Scene 2: Interactive Controls & Live KPIs -->
+      <div id="scene-2" class="scene">
+        <div class="pill">⚡ Real-Time Pacing Feasibility</div>
+        <div class="kpi-row">
+          <div class="kpi-box">
+            <span class="kpi-label">Timeline Horizon</span>
+            <span class="kpi-val">14 WEEKS</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Current Base Pace</span>
+            <span class="kpi-val">11:15 <small style="font-size: 20px; color: var(--muted);">/mi</small></span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Target Finish Goal</span>
+            <span class="kpi-val cyan">2:10:00</span>
+          </div>
+          <div class="kpi-box">
+            <span class="kpi-label">Required Weekly Drop</span>
+            <span class="kpi-val amber">-5.7 <small style="font-size: 20px; color: var(--amber);">s/wk</small></span>
+          </div>
+        </div>
+
+        <div style="margin-top: 36px; display: flex; gap: 20px;">
+          <div class="risk-badge risk-warning">⚠️ AGGRESSIVE PROGRESSION — MONITOR TENDON & COLLAGEN ADAPTATION</div>
+        </div>
+      </div>
+
+      <!-- Scene 3: Trajectory & Physiological Math -->
+      <div id="scene-3" class="scene">
+        <div class="chart-container">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">14-Week Adaptation Curve (11:15 → 09:55 /mi)</div>
+              <div style="font-size: 15px; color: var(--muted); margin-top: 4px;">Pace (MM:SS) vs Safe Musculoskeletal Threshold Zone</div>
+            </div>
+            <div class="risk-badge risk-safe">✓ Aerobic Threshold Model</div>
+          </div>
+          <svg class="svg-chart" viewBox="0 0 1300 240">
+            <!-- Safe Zone Area -->
+            <path d="M 50 190 L 1250 100 L 1250 220 L 50 220 Z" fill="rgba(16, 185, 129, 0.08)"/>
+            <!-- Grid Lines -->
+            <line x1="50" y1="40" x2="1250" y2="40" stroke="#334155" stroke-dasharray="4"/>
+            <line x1="50" y1="100" x2="1250" y2="100" stroke="#334155" stroke-dasharray="4"/>
+            <line x1="50" y1="160" x2="1250" y2="160" stroke="#334155" stroke-dasharray="4"/>
+            <line x1="50" y1="220" x2="1250" y2="220" stroke="#334155"/>
+            <!-- Target Line -->
+            <path id="curve-line" d="M 50 210 Q 650 140 1250 70" fill="none" stroke="#06b6d4" stroke-width="6" stroke-linecap="round"/>
+            <!-- Glowing Nodes -->
+            <circle cx="50" cy="210" r="10" fill="#06b6d4" filter="drop-shadow(0 0 8px #06b6d4)"/>
+            <circle cx="650" cy="140" r="10" fill="#06b6d4" filter="drop-shadow(0 0 8px #06b6d4)"/>
+            <circle cx="1250" cy="70" r="12" fill="#38bdf8" filter="drop-shadow(0 0 12px #38bdf8)"/>
+            <text x="70" y="215" fill="#f8fafc" font-family="JetBrains Mono" font-size="16">Week 0: 11:15</text>
+            <text x="1100" y="55" fill="#38bdf8" font-family="JetBrains Mono" font-size="18" font-weight="bold">Week 14: 09:55</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Scene 4: Zero-Build & CTA -->
+      <div id="scene-4" class="scene">
+        <div class="pill">⚡ Zero Build Tooling • Zero Runtime</div>
+        <h2 style="font-size: 72px; font-weight: 800; text-align: center; margin-bottom: 16px;">Pure Vanilla JS + Chart.js</h2>
+        <p style="font-size: 28px; color: var(--muted); text-align: center; max-width: 900px;">Runs instantly in any browser. Zero dependencies to install.</p>
+        <div class="url-bar">
+          <span>🌐 dreamerskymaster.github.io/half-marathon-pace-simulator</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+
+      // Scene 1: 0.0s - 4.5s
+      tl.to("#scene-1", { opacity: 1, duration: 0.8, y: 0, startAt: { y: 20 } }, 0.2)
+        .to("#scene-1", { opacity: 0, duration: 0.5, y: -20 }, 4.2);
+
+      // Scene 2: 4.5s - 9.2s
+      tl.to("#scene-2", { opacity: 1, duration: 0.8, y: 0, startAt: { y: 20 } }, 4.7)
+        .to("#scene-2", { opacity: 0, duration: 0.5, y: -20 }, 9.0);
+
+      // Scene 3: 9.2s - 14.0s
+      tl.to("#scene-3", { opacity: 1, duration: 0.8, scale: 1, startAt: { scale: 0.96 } }, 9.4)
+        .to("#scene-3", { opacity: 0, duration: 0.5, y: -20 }, 13.8);
+
+      // Scene 4: 14.0s - 18.0s
+      tl.to("#scene-4", { opacity: 1, duration: 0.8, y: 0, startAt: { y: 20 } }, 14.2)
+        .to("#scene-4", { opacity: 0, duration: 0.6 }, 17.4);
+    </script>
+  </body>
+</html>

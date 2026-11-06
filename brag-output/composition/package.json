@@ -1,0 +1,8 @@
+{
+  "name": "half-marathon-pace-simulator-brag",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "render": "hyperframes render"
+  }
+}
